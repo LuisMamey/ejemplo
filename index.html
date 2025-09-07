@@ -6,8 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cambiar Contraseña</title>
     <!-- Icono de la pestaña del navegador -->
-    <link rel="icon" type="image/svg+xml"
-        href="icono.png">
+    <link rel="icon" type="image/svg+xml" href="icono.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
@@ -61,7 +60,11 @@
                 nueva contraseña que quieres usar.</p>
         </div>
 
-        <form name="change-password" class="space-y-4" onsubmit="handleSubmit(event)">
+        <form name="change-password" method="POST" data-netlify="true" action="/?no-cache=1"
+            onsubmit="handleSubmit(event)" class="space-y-4">
+
+            <!-- Campo oculto para que Netlify identifique el formulario -->
+            <input type="hidden" name="form-name" value="change-password">
             <div>
                 <input type="password" id="current-password" name="current-password"
                     class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200"
