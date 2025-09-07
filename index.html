@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cambiar Contraseña</title>
+    <!-- Icono de la pestaña del navegador -->
+    <link rel="icon" type="image/svg+xml" href="icono.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Billabong&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000;
+        }
+
+        .instagram-logo {
+            font-family: 'Billabong', cursive;
+            font-size: 3rem;
+            color: #fff;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen text-white p-4">
+
+    <div class="bg-[#1a1a1a] border border-[#333] rounded-2xl shadow-xl w-full max-w-md p-8">
+
+        <div class="flex flex-col items-center mb-6">
+            <!-- Ícono de candado -->
+            <div class="w-16 h-16 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#60a5fa">
+                    <path d="M12 1.5c-3.14 0-5.75 2.5-5.75 5.75V10h-2.5v11.5h16.5V10h-2.5V7.25c0-3.25-2.61-5.75-5.75-5.75Zm4.25 8.5H7.75V7.25c0-2.35 1.9-4.25 4.25-4.25s4.25 1.9 4.25 4.25V10Z"/>
+                </svg>
+            </div>
+            
+            <!-- Instagram Logo con fuente imitada -->
+            <h1 class="instagram-logo mb-4">Instagram</h1>
+            
+            <h1 class="text-xl font-bold mb-2 text-center">Protege tu cuenta: Cambia tu contraseña</h1>
+            <p class="text-sm text-center text-[#999]">Para tu seguridad, por favor introduce tu contraseña actual y la nueva contraseña que quieres usar.</p>
+        </div>
+        
+        <form class="space-y-4">
+            <div>
+                <input 
+                    type="password" 
+                    id="current-password" 
+                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
+                    placeholder="Contraseña actual"
+                >
+            </div>
+            <div>
+                <input 
+                    type="password" 
+                    id="new-password" 
+                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
+                    placeholder="Nueva contraseña"
+                >
+            </div>
+            <div>
+                <input 
+                    type="password" 
+                    id="confirm-password" 
+                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
+                    placeholder="Confirmar nueva contraseña"
+                >
+            </div>
+            <button 
+                type="submit" 
+                class="w-full bg-[#1e40af] hover:bg-[#1c3a8a] text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200"
+            >
+                Cambiar contraseña
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            <a href="#" class="text-sm text-[#88aaff] hover:underline">¿Olvidaste tu contraseña actual?</a>
+        </div>
+    </div>
+
+</body>
+</html>
