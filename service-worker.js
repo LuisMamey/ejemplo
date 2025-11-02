@@ -1,12 +1,12 @@
 const CACHE_NAME = 'soundscape-v2'; // 🔄 INCREMENTAR VERSIÓN para forzar actualización
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/style.css',
-  '/app.js',
-  '/manifest.json',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
+  './icons/icon-192.svg',
+  './icons/icon-512.svg'
 ];
 
 // Evento de Instalación: Cachear los archivos principales

@@ -1,9 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Registro del Service Worker para PWA (MEJORADO) ---
+    // --- Registro del Service Worker para PWA (CORREGIDO) ---
     if ('serviceWorker' in navigator) {
         // Esperar a que la página cargue completamente es una mejor práctica
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/service-worker.js')
+            
+            // --- ESTA ES LA LÍNEA CORREGIDA ---
+            navigator.serviceWorker.register('./service-worker.js')
+            // ---------------------------------
+
                 .then(reg => {
                     console.log('✅ Service Worker Registrado:', reg.scope);
                     reg.onupdatefound = () => {
@@ -27,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
+});
 
     // --- PWA Installation Prompt ---
     let deferredPrompt;
