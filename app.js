@@ -1,9 +1,31 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Registro del Service Worker para PWA ---
+    // --- Registro del Service Worker para PWA (MEJORADO) ---
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(reg => console.log('Service Worker registrado:', reg))
-            .catch(err => console.error('Error al registrar Service Worker:', err));
+        // Esperar a que la página cargue completamente es una mejor práctica
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(reg => {
+                    console.log('✅ Service Worker Registrado:', reg.scope);
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        if (installingWorker) {
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed') {
+                                    if (navigator.serviceWorker.controller) {
+                                        console.log('🔄 Hay contenido nuevo disponible. Recarga la página.');
+                                    } else {
+                                        console.log('📦 Contenido cacheado para uso offline.');
+                                    }
+                                }
+                            };
+                        }
+                    };
+                })
+                .catch(err => {
+                    console.error('❌ Error al registrar Service Worker:', err);
+                    alert('Error: No se pudo registrar el Service Worker para modo offline. La app funcionará, pero no sin conexión.');
+                });
+        });
     }
 
     // --- PWA Installation Prompt ---
@@ -13,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     installBtn.className = 'install-btn';
     installBtn.style.display = 'none';
 
-    // Agregar botón de instalación al header
     const header = document.querySelector('header');
     if (header) {
         header.appendChild(installBtn);
@@ -23,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         deferredPrompt = e;
         installBtn.style.display = 'block';
-        console.log('PWA installation prompt ready');
+        console.log('👍 PWA installation prompt listo');
     });
 
     installBtn.addEventListener('click', async () => {
@@ -46,6 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
         timerInterval: null,
         timerSeconds: 0,
     };
+    
+    // Límite de tamaño de archivo en MB (para prevenir crasheo en móvil)
+    const MAX_FILE_SIZE_MB = 100;
 
     // --- Referencias a Elementos del DOM ---
     const playPauseBtn = document.getElementById('play-pause-btn');
@@ -81,6 +105,8 @@ document.addEventListener('DOMContentLoaded', () => {
         state.currentTrackIndex = index;
         const track = state.playlist[index];
 
+        // Limpiar src anterior para detener la carga si hubiera una
+        state.audio.src = '';
         state.audio.src = track.url;
         state.audio.load();
 
@@ -89,6 +115,32 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTrackName.textContent = track.name;
 
         updatePlaylistUI();
+
+        // Si estaba sonando, intentar reproducir la nueva pista
+        if (state.isPlaying) {
+             // 'play()' devuelve una promesa que puede ser rechazada si el usuario no ha interactuado
+            const playPromise = state.audio.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.warn("Autoplay bloqueado, esperando interacción del usuario.", error);
+                    // Si falla el autoplay, pausamos visualmente
+                    playPauseUI(false); 
+                });
+            }
+        }
+    }
+
+    // Función separada para actualizar la UI (evita lógica duplicada)
+    function playPauseUI(isPlaying) {
+        state.isPlaying = isPlaying;
+        if (isPlaying) {
+            playPauseBtn.textContent = '⏸️';
+            visualizer.classList.add('playing');
+        } else {
+            state.audio.pause();
+            playPauseBtn.textContent = '▶️';
+            visualizer.classList.remove('playing');
+        }
     }
 
     function playPause() {
@@ -102,67 +154,76 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (state.isPlaying) {
-            state.audio.pause();
-            playPauseBtn.textContent = '▶️';
-            visualizer.classList.remove('playing');
+            playPauseUI(false);
         } else {
-            state.audio.play();
-            playPauseBtn.textContent = '⏸️';
-            visualizer.classList.add('playing');
+            const playPromise = state.audio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    playPauseUI(true);
+                }).catch(error => {
+                    console.error("Error al reproducir:", error);
+                    playPauseUI(false);
+                    alert("Error al reproducir. El archivo podría estar corrupto o no ser compatible.");
+                });
+            }
         }
-        state.isPlaying = !state.isPlaying;
     }
 
     function playNext() {
         if (state.playlist.length === 0) return;
         const nextIndex = (state.currentTrackIndex + 1) % state.playlist.length;
         loadTrack(nextIndex);
-        if (state.isPlaying) {
-            state.audio.play();
-        }
+        // loadTrack ya se encarga de reproducir si state.isPlaying es true
     }
 
     function playPrev() {
         if (state.playlist.length === 0) return;
         const prevIndex = state.currentTrackIndex <= 0 ? state.playlist.length - 1 : state.currentTrackIndex - 1;
         loadTrack(prevIndex);
-        if (state.isPlaying) {
-            state.audio.play();
-        }
+        // loadTrack ya se encarga de reproducir si state.isPlaying es true
     }
 
     async function handleFileUpload(files) {
         for (const file of files) {
             try {
-                // Validación más flexible para tipos de audio
+                // --- PARCHE: LÍMITE DE TAMAÑO DE ARCHIVO ---
+                if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+                    alert(`El archivo ${file.name} es demasiado grande (${(file.size / 1024 / 1024).toFixed(1)} MB). Límite: ${MAX_FILE_SIZE_MB} MB.`);
+                    console.warn(`Archivo rechazado por tamaño: ${file.name}, ${file.size} bytes`);
+                    continue; // Saltar este archivo
+                }
+
+                // --- PARCHE: VALIDACIÓN MÁS ROBUSTA Y CON MEJOR REGISTRO ---
                 const validTypes = [
                     'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave',
                     'audio/ogg', 'audio/m4a', 'audio/mp4', 'audio/aac',
                     'audio/x-m4a', 'audio/flac', 'audio/webm'
                 ];
-
+                
                 const fileName = file.name.toLowerCase();
                 const fileExtension = fileName.split('.').pop();
-
-                // Verificar por MIME type o extensión
+                
                 const isValidByType = validTypes.includes(file.type);
                 const isValidByExtension = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'webm'].includes(fileExtension);
 
+                // --- LOG DE DEPURACIÓN CLAVE ---
+                console.log(`[Validando Archivo] Nombre: ${file.name}, Tipo MIME: "${file.type}", Extensión: "${fileExtension}", VálidoPorTipo: ${isValidByType}, VálidoPorExt: ${isValidByExtension}`);
+
+                // Si *ni* el tipo *ni* la extensión son válidos, rechazar.
+                // Esto es más flexible para móviles donde file.type suele ser "".
                 if (!isValidByType && !isValidByExtension) {
-                    console.warn(`Tipo de archivo no reconocido: ${file.type}, extensión: ${fileExtension}`);
-                    // En móvil algunos tipos pueden no ser reconocidos correctamente, así que intentamos con la extensión
-                    if (!isValidByExtension) {
-                        alert(`${file.name} no parece ser un archivo de audio válido`);
-                        continue;
-                    }
+                    alert(`${file.name} no parece ser un archivo de audio válido (Extensión: ${fileExtension}, Tipo: ${file.type})`);
+                    console.warn(`Archivo rechazado: ${file.name}. Tipo y extensión no válidos.`);
+                    continue; // Saltar este archivo
                 }
+                // --- FIN DEL PARCHE DE VALIDACIÓN ---
 
                 // Para dispositivos móviles, leer el archivo como Data URL
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     const track = {
                         name: file.name,
-                        url: e.target.result, // Usar Data URL en lugar de Blob URL
+                        url: e.target.result, // Usar Data URL
                         size: file.size,
                         type: file.type || `audio/${fileExtension}`
                     };
@@ -176,41 +237,55 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 };
 
+                // --- PARCHE: MEJOR MANEJO DE ERROR DE FILEREADER ---
                 reader.onerror = function(e) {
-                    console.error('Error reading file:', e);
-                    alert(`Error al leer el archivo ${file.name}`);
+                    console.error(`Error de FileReader al leer el archivo ${file.name}:`, e);
+                    alert(`Error al leer el archivo ${file.name}. ¿Quizás es demasiado grande o está corrupto?`);
                 };
 
                 reader.readAsDataURL(file);
 
             } catch (error) {
-                console.error('Error processing file:', error);
+                console.error('Error al procesar el archivo:', error);
                 alert(`Error al procesar el archivo ${file.name}: ${error.message}`);
             }
         }
     }
 
     function removeFromPlaylist(index) {
-        const track = state.playlist[index];
-
-        // Liberar recursos si es una Blob URL
-        if (track.url && track.url.startsWith('blob:')) {
-            URL.revokeObjectURL(track.url);
-        }
+        // --- PARCHE: LIMPIEZA DE CÓDIGO ---
+        // Ya no usamos Blob URLs (createObjectURL), usamos Data URLs.
+        // Las Data URLs son strings y no necesitan ser "revocadas".
+        // El recolector de basura las eliminará cuando se quite la referencia.
+        // const track = state.playlist[index];
+        // if (track.url && track.url.startsWith('blob:')) {
+        //     URL.revokeObjectURL(track.url);
+        // }
 
         state.playlist.splice(index, 1);
 
         if (state.currentTrackIndex === index) {
+            // Si la pista eliminada era la actual
+            if (state.isPlaying) {
+                playPauseUI(false); // Detener la reproducción
+            }
+            state.audio.src = ''; // Limpiar el reproductor
+
             if (state.playlist.length > 0) {
+                // Cargar la siguiente (o la que ahora esté en el mismo índice)
                 loadTrack(Math.min(index, state.playlist.length - 1));
             } else {
+                // La lista está vacía
                 state.currentTrackIndex = -1;
-                state.audio.src = '';
                 trackTitle.textContent = 'Selecciona un archivo de audio';
                 trackArtist.textContent = 'Sube un archivo para comenzar';
                 currentTrackName.textContent = 'Selecciona un sonido para comenzar';
+                progressBar.value = 0;
+                currentTimeEl.textContent = '0:00';
+                durationEl.textContent = '0:00';
             }
         } else if (state.currentTrackIndex > index) {
+            // Si se eliminó una pista *antes* de la actual, ajustar el índice
             state.currentTrackIndex--;
         }
 
@@ -239,9 +314,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const index = parseInt(trackEl.dataset.index);
             trackEl.addEventListener('click', (e) => {
                 if (!e.target.classList.contains('playlist-track-remove')) {
-                    loadTrack(index);
-                    if (state.isPlaying) {
-                        state.audio.play();
+                    if (state.currentTrackIndex !== index) {
+                        loadTrack(index);
+                    } else if (!state.isPlaying) {
+                        // Si se hace clic en la activa y está pausada, reproducir
+                        playPause();
                     }
                 }
             });
@@ -318,7 +395,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const progress = (state.audio.currentTime / state.audio.duration) * 100;
             progressBar.value = progress;
             currentTimeEl.textContent = formatTime(state.audio.currentTime);
-            durationEl.textContent = formatTime(state.audio.duration);
         }
     });
 
@@ -330,31 +406,33 @@ document.addEventListener('DOMContentLoaded', () => {
         durationEl.textContent = formatTime(state.audio.duration);
     });
 
-    // Manejo de errores de carga de audio
+    // --- PARCHE: MEJOR MANEJO DE ERROR DE AUDIO ---
     state.audio.addEventListener('error', (e) => {
-        console.error('Error loading audio:', e);
+        console.error('Error al cargar el audio:', e);
         const error = state.audio.error;
-        let errorMessage = 'Error desconocido al cargar el audio';
+        // Obtener el nombre de la pista que falló
+        const trackName = state.playlist[state.currentTrackIndex]?.name || 'el archivo de audio';
+        let errorMessage = `Error desconocido al cargar ${trackName}`;
 
         switch(error?.code) {
-            case 1:
-                errorMessage = 'Error: La carga del audio fue abortada';
+            case 1: // MEDIA_ERR_ABORTED
+                errorMessage = `La carga de ${trackName} fue abortada.`;
                 break;
-            case 2:
-                errorMessage = 'Error: Error de red al cargar el audio';
+            case 2: // MEDIA_ERR_NETWORK
+                errorMessage = `Error de red al cargar ${trackName}.`;
                 break;
-            case 3:
-                errorMessage = 'Error: Falló la decodificación del audio';
+            case 3: // MEDIA_ERR_DECODE
+                errorMessage = `Error al decodificar ${trackName}. El archivo puede estar corrupto.`;
                 break;
-            case 4:
-                errorMessage = 'Error: Formato de audio no compatible';
+            case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
+                errorMessage = `El formato de ${trackName} no es compatible con tu navegador.`;
                 break;
         }
 
         console.error(errorMessage);
-        alert(errorMessage);
+        alert(errorMessage); // Mostrar el error específico al usuario
 
-        // Intentar reproducir el siguiente
+        // Intentar reproducir el siguiente para no detener la playlist
         setTimeout(() => playNext(), 1000);
     });
 
@@ -370,7 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function startTimer() {
         clearInterval(state.timerInterval);
         const minutes = parseInt(timerInput.value, 10);
-        if (isNaN(minutes) || minutes <= 0) return;
+        if (isNaN(minutes) || minutes <= 0) {
+            alert("Por favor, introduce un número válido de minutos.");
+            return;
+        }
 
         state.timerSeconds = minutes * 60;
         updateTimerDisplay();
@@ -383,7 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearInterval(state.timerInterval);
                 timerDisplay.textContent = '¡Tiempo!';
                 if (state.isPlaying) {
-                    playPause();
+                    playPause(); // Pausa la música
                 }
             }
         }, 1000);
@@ -406,13 +487,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (files.length > 0) {
             console.log(`Procesando ${files.length} archivo(s) de audio`);
             await handleFileUpload(files);
-            // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
             e.target.value = '';
         }
     });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
+        // Evitar que los atajos se activen si se está escribiendo en el input del timer
+        if (e.target === timerInput) return;
+
         switch(e.code) {
             case 'Space':
                 e.preventDefault();
@@ -442,23 +525,23 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isMobile()) {
         console.log('Dispositivo móvil detectado - aplicando optimizaciones');
 
-        // Prevenir zoom al tocar controles
+        // Prevenir zoom al tocar controles (mejora de usabilidad)
         document.addEventListener('touchstart', (e) => {
-            if (e.target.matches('button, input[type="range"]')) {
-                e.preventDefault();
+            if (e.target.matches('button, input[type="range"], .playlist-track')) {
+                // No previene el default completamente para permitir 'click'
             }
-        }, { passive: false });
+        }, { passive: true });
 
-        // Agregar retroalimentación táctil
-        document.querySelectorAll('button').forEach(btn => {
+        // Agregar retroalimentación táctil simple
+        document.querySelectorAll('button, .playlist-track').forEach(btn => {
             btn.addEventListener('touchstart', () => {
-                btn.style.transform = 'scale(0.95)';
-            });
+                btn.style.opacity = '0.7';
+            }, { passive: true });
             btn.addEventListener('touchend', () => {
                 setTimeout(() => {
-                    btn.style.transform = '';
+                    btn.style.opacity = '';
                 }, 100);
-            });
+            }, { passive: true });
         });
     }
 
