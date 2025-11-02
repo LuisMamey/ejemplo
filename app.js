@@ -131,35 +131,72 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function handleFileUpload(files) {
-        Array.from(files).forEach(file => {
-            if (!file.type.startsWith('audio/')) {
-                alert(`${file.name} no es un archivo de audio válido`);
-                return;
+    async function handleFileUpload(files) {
+        for (const file of files) {
+            try {
+                // Validación más flexible para tipos de audio
+                const validTypes = [
+                    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave',
+                    'audio/ogg', 'audio/m4a', 'audio/mp4', 'audio/aac',
+                    'audio/x-m4a', 'audio/flac', 'audio/webm'
+                ];
+
+                const fileName = file.name.toLowerCase();
+                const fileExtension = fileName.split('.').pop();
+
+                // Verificar por MIME type o extensión
+                const isValidByType = validTypes.includes(file.type);
+                const isValidByExtension = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'webm'].includes(fileExtension);
+
+                if (!isValidByType && !isValidByExtension) {
+                    console.warn(`Tipo de archivo no reconocido: ${file.type}, extensión: ${fileExtension}`);
+                    // En móvil algunos tipos pueden no ser reconocidos correctamente, así que intentamos con la extensión
+                    if (!isValidByExtension) {
+                        alert(`${file.name} no parece ser un archivo de audio válido`);
+                        continue;
+                    }
+                }
+
+                // Para dispositivos móviles, leer el archivo como Data URL
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const track = {
+                        name: file.name,
+                        url: e.target.result, // Usar Data URL en lugar de Blob URL
+                        size: file.size,
+                        type: file.type || `audio/${fileExtension}`
+                    };
+
+                    state.playlist.push(track);
+                    updatePlaylistUI();
+                    updateFileList();
+
+                    if (state.currentTrackIndex === -1 && state.playlist.length > 0) {
+                        loadTrack(0);
+                    }
+                };
+
+                reader.onerror = function(e) {
+                    console.error('Error reading file:', e);
+                    alert(`Error al leer el archivo ${file.name}`);
+                };
+
+                reader.readAsDataURL(file);
+
+            } catch (error) {
+                console.error('Error processing file:', error);
+                alert(`Error al procesar el archivo ${file.name}: ${error.message}`);
             }
-
-            const url = URL.createObjectURL(file);
-            const track = {
-                name: file.name,
-                url: url,
-                size: file.size,
-                type: file.type
-            };
-
-            state.playlist.push(track);
-        });
-
-        updatePlaylistUI();
-        updateFileList();
-
-        if (state.currentTrackIndex === -1 && state.playlist.length > 0) {
-            loadTrack(0);
         }
     }
 
     function removeFromPlaylist(index) {
         const track = state.playlist[index];
-        URL.revokeObjectURL(track.url);
+
+        // Liberar recursos si es una Blob URL
+        if (track.url && track.url.startsWith('blob:')) {
+            URL.revokeObjectURL(track.url);
+        }
 
         state.playlist.splice(index, 1);
 
@@ -263,9 +300,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }, false);
     });
 
-    uploadArea.addEventListener('drop', (e) => {
+    uploadArea.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadArea.classList.remove('drag-over');
+
         const files = e.dataTransfer.files;
-        handleFileUpload(files);
+        if (files.length > 0) {
+            console.log(`Procesando ${files.length} archivo(s) vía drag & drop`);
+            await handleFileUpload(files);
+        }
     }, false);
 
     // --- Audio Event Listeners ---
@@ -284,6 +328,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
     state.audio.addEventListener('loadedmetadata', () => {
         durationEl.textContent = formatTime(state.audio.duration);
+    });
+
+    // Manejo de errores de carga de audio
+    state.audio.addEventListener('error', (e) => {
+        console.error('Error loading audio:', e);
+        const error = state.audio.error;
+        let errorMessage = 'Error desconocido al cargar el audio';
+
+        switch(error?.code) {
+            case 1:
+                errorMessage = 'Error: La carga del audio fue abortada';
+                break;
+            case 2:
+                errorMessage = 'Error: Error de red al cargar el audio';
+                break;
+            case 3:
+                errorMessage = 'Error: Falló la decodificación del audio';
+                break;
+            case 4:
+                errorMessage = 'Error: Formato de audio no compatible';
+                break;
+        }
+
+        console.error(errorMessage);
+        alert(errorMessage);
+
+        // Intentar reproducir el siguiente
+        setTimeout(() => playNext(), 1000);
     });
 
     // --- Progress Bar Control ---
@@ -329,8 +401,14 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtn.addEventListener('click', playNext);
     startTimerBtn.addEventListener('click', startTimer);
 
-    audioFileInput.addEventListener('change', (e) => {
-        handleFileUpload(e.target.files);
+    audioFileInput.addEventListener('change', async (e) => {
+        const files = e.target.files;
+        if (files.length > 0) {
+            console.log(`Procesando ${files.length} archivo(s) de audio`);
+            await handleFileUpload(files);
+            // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
+            e.target.value = '';
+        }
     });
 
     // Keyboard shortcuts
@@ -355,6 +433,44 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Detectar si es un dispositivo móvil
+    function isMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    }
+
+    // Mejoras específicas para móvil
+    if (isMobile()) {
+        console.log('Dispositivo móvil detectado - aplicando optimizaciones');
+
+        // Prevenir zoom al tocar controles
+        document.addEventListener('touchstart', (e) => {
+            if (e.target.matches('button, input[type="range"]')) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Agregar retroalimentación táctil
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('touchend', () => {
+                setTimeout(() => {
+                    btn.style.transform = '';
+                }, 100);
+            });
+        });
+    }
+
     // Initialize UI
     updatePlaylistUI();
+
+    // Mensaje de bienvenida con instrucciones
+    if (state.playlist.length === 0) {
+        const instructions = isMobile()
+            ? '📱 Para cargar audio: Toca el área de subida y selecciona tus archivos de música'
+            : '💻 Para cargar audio: Haz clic o arrastra archivos de música al área de subida';
+
+        console.log(instructions);
+    }
 });
