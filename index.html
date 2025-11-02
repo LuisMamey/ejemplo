@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoundScape - Tu Espacio Sonoro</title>
+    <meta name="description" content="Un reproductor de música y sonidos ambientales para la concentración y el bienestar.">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Iconos para PWA -->
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192.png/222/fff?text=SS">
+    <meta name="theme-color" content="#121212">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-container">
+        <header>
+            <h1>SoundScape</h1>
+            <p id="current-track-name">Selecciona un sonido para comenzar</p>
+        </header>
+
+        <main>
+            <!-- Visualizador / Imagen de Fondo -->
+            <section id="visualizer" class="visualizer">
+                <div class="visualizer-placeholder">
+                    <span id="visualizer-text">🎧</span>
+                </div>
+            </section>
+
+            <!-- Información y Progreso de la Canción -->
+            <section id="now-playing" class="now-playing">
+                <div class="track-info">
+                    <h4 id="track-title">Selecciona un archivo de audio</h4>
+                    <p id="track-artist">Sube un archivo para comenzar</p>
+                </div>
+                <div class="progress-container">
+                    <span id="current-time">0:00</span>
+                    <input type="range" id="progress-bar" class="progress-bar" min="0" max="100" value="0">
+                    <span id="duration">0:00</span>
+                </div>
+            </section>
+
+            <!-- Controles Principales -->
+            <section id="player-controls" class="player-controls">
+                <button id="prev-btn" class="btn-secondary">⏮️</button>
+                <button id="play-pause-btn" class="btn-main">▶️</button>
+                <button id="next-btn" class="btn-secondary">⏭️</button>
+            </section>
+
+            <!-- Temporizador -->
+            <section id="timer-section" class="timer-section">
+                <label for="timer-input">⏱️ Temporizador (min):</label>
+                <input type="number" id="timer-input" value="25" min="1" max="120">
+                <button id="start-timer-btn">Iniciar</button>
+                <span id="timer-display"></span>
+            </section>
+
+            <!-- Subida de Archivos de Audio -->
+            <section id="upload-section" class="upload-section">
+                <h3>Subir Audio</h3>
+                <div class="upload-area" id="upload-area">
+                    <input type="file" id="audio-file-input" accept="audio/*" multiple hidden>
+                    <label for="audio-file-input" class="upload-label">
+                        <div class="upload-icon">📁</div>
+                        <p>Haz clic o arrastra archivos de audio aquí</p>
+                        <small>Formatos: MP3, WAV, OGG, M4A</small>
+                    </label>
+                </div>
+                <div id="file-list" class="file-list"></div>
+            </section>
+
+            <!-- Lista de Reproducción -->
+            <section id="playlist" class="playlist">
+                <h3>Lista de Reproducción</h3>
+                <div id="playlist-tracks" class="playlist-tracks">
+                    <p class="empty-message">No hay archivos cargados</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
