@@ -1,30 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Registro del Service Worker para PWA ---
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('./service-worker.js')
-                .then(reg => {
-                    console.log('✅ Service Worker Registrado:', reg.scope);
-                    reg.onupdatefound = () => {
-                        const installingWorker = reg.installing;
-                        if (installingWorker) {
-                            installingWorker.onstatechange = () => {
-                                if (installingWorker.state === 'installed') {
-                                    if (navigator.serviceWorker.controller) {
-                                        console.log('🔄 Hay contenido nuevo disponible. Recarga la página.');
-                                    } else {
-                                        console.log('📦 Contenido cacheado para uso offline.');
-                                    }
-                                }
-                            };
-                        }
-                    };
-                })
-                .catch(err => {
-                    console.error('❌ Error al registrar Service Worker:', err);
-                    alert('Error: No se pudo registrar el Service Worker para modo offline. La app funcionará, pero no sin conexión.');
-                });
-        });
+        navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('Service Worker registrado:', reg))
+            .catch(err => console.error('Error al registrar Service Worker:', err));
     }
 
     // --- PWA Installation Prompt ---
