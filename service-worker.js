@@ -1,4 +1,4 @@
-const CACHE_NAME = 'soundscape-v2'; // 🔄 INCREMENTAR VERSIÓN para forzar actualización
+const CACHE_NAME = 'soundscape-v3'; // Incrementar versión para forzar actualización
 const urlsToCache = [
   './',
   './index.html',

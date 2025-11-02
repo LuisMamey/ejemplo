@@ -1,13 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Registro del Service Worker para PWA (CORREGIDO) ---
+    // --- Registro del Service Worker para PWA ---
     if ('serviceWorker' in navigator) {
-        // Esperar a que la página cargue completamente es una mejor práctica
         window.addEventListener('load', () => {
-            
-            // --- ESTA ES LA LÍNEA CORREGIDA ---
             navigator.serviceWorker.register('./service-worker.js')
-            // ---------------------------------
-
                 .then(reg => {
                     console.log('✅ Service Worker Registrado:', reg.scope);
                     reg.onupdatefound = () => {
@@ -31,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
         });
     }
-});
 
     // --- PWA Installation Prompt ---
     let deferredPrompt;
@@ -72,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         timerInterval: null,
         timerSeconds: 0,
     };
-    
+
     // Límite de tamaño de archivo en MB (para prevenir crasheo en móvil)
     const MAX_FILE_SIZE_MB = 100;
 
@@ -129,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 playPromise.catch(error => {
                     console.warn("Autoplay bloqueado, esperando interacción del usuario.", error);
                     // Si falla el autoplay, pausamos visualmente
-                    playPauseUI(false); 
+                    playPauseUI(false);
                 });
             }
         }
@@ -204,10 +198,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     'audio/ogg', 'audio/m4a', 'audio/mp4', 'audio/aac',
                     'audio/x-m4a', 'audio/flac', 'audio/webm'
                 ];
-                
+
                 const fileName = file.name.toLowerCase();
                 const fileExtension = fileName.split('.').pop();
-                
+
                 const isValidByType = validTypes.includes(file.type);
                 const isValidByExtension = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac', 'webm'].includes(fileExtension);
 
@@ -400,6 +394,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const progress = (state.audio.currentTime / state.audio.duration) * 100;
             progressBar.value = progress;
             currentTimeEl.textContent = formatTime(state.audio.currentTime);
+            durationEl.textContent = formatTime(state.audio.duration);
         }
     });
 
